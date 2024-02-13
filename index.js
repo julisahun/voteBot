@@ -2,9 +2,10 @@ import inquirer from 'inquirer';
 import promptSync from 'prompt-sync';
 const prompt = promptSync();
 
-const eventHash = 'jGMsgaayi2foV36t8B7KbE'
+const eventHash = 'r9GierAM6QXVHYiMUR1k2s'
 let event
 let poll
+let section
 
 
 async function getToken() {
@@ -22,7 +23,7 @@ async function getToken() {
     "x-client-id": "B3iBicAYwOoROjG",
     "x-newrelic-id": "undefined",
     "x-slidoapp-version": "SlidoParticipantApp/53.120.3 (web)",
-    "Referer": "https://app.sli.do/event/jGMsgaayi2foV36t8B7KbE",
+    "Referer": `https://app.sli.do/event/${eventHash}`,
     "Referrer-Policy": "strict-origin-when-cross-origin"
   },
   "body": "{\"initialAppViewer\":\"browser--other\",\"granted_consents\":[\"StoreEssentialCookies\"]}",
@@ -48,7 +49,7 @@ async function sendVote(token, choice) {
     "x-client-id": "B3iBicAYwOoROjG",
     "x-newrelic-id": "undefined",
     "x-slidoapp-version": "SlidoParticipantApp/53.120.3 (web)",
-    "Referer": "https://app.sli.do/event/jGMsgaayi2foV36t8B7KbE/live/polls",
+    "Referer": `https://app.sli.do/event/${eventHash}/live/polls`,
     "Referrer-Policy": "strict-origin-when-cross-origin"
   },
   "body": `{\"feedback_uuid\":\"${poll}\",\"votings\":[{\"feedback_question_uuid\":\"${choice.question}\",\"feedback_question_option_uuid\":\"${choice.uuid}\",\"is_anonymous\":true}],\"is_anonymous\":true}`,
@@ -59,7 +60,7 @@ async function sendVote(token, choice) {
 }
 
 async function getOptions(token) {
-  const res = await fetch(`https://app.sli.do/eu1/api/v0.5/events/${event}/polls-v2?sectionUuid=2cca318e-0bb8-46d4-89d2-073a489f4f49&onlyActive=true`, {
+  const res = await fetch(`https://app.sli.do/eu1/api/v0.5/events/${event}/polls-v2?sectionUuid=${section}&onlyActive=true`, {
   "headers": {
     "accept": "application/json, text/plain, */*",
     "accept-language": "en-US,en;q=0.9",
@@ -74,7 +75,7 @@ async function getOptions(token) {
     "x-newrelic-id": "undefined",
     "x-slidoapp-version": "SlidoParticipantApp/53.120.3 (web)"
   },
-  "referrer": "https://app.sli.do/event/jGMsgaayi2foV36t8B7KbE",
+  "referrer": `https://app.sli.do/event/${eventHash}`,
   "referrerPolicy": "strict-origin-when-cross-origin",
   "body": null,
   "method": "GET",
@@ -113,10 +114,39 @@ async function getEvent() {
   event = data.uuid
 }
 
+async function getSection(token) {
+  const res = await fetch(`https://app.sli.do/eu1/api/v0.5/events/${event}/summary`, {
+  "headers": {
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "en-US,en;q=0.9",
+    "authorization": `Bearer ${token}`,
+    "sec-ch-ua": "\"Not A(Brand\";v=\"99\", \"Google Chrome\";v=\"121\", \"Chromium\";v=\"121\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Linux\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "x-client-id": "flTAgDrXwfYGN9p",
+    "x-newrelic-id": "undefined",
+    "x-slidoapp-version": "SlidoParticipantApp/53.120.4 (web)"
+  },
+  "referrer": `https://app.sli.do/event/${eventHash}`,
+  "referrerPolicy": "strict-origin-when-cross-origin",
+  "body": null,
+  "method": "GET",
+  "mode": "cors",
+  "credentials": "include"
+});
+  const data = await res.json()
+  section = Object.keys(data.bySection)[0]
+  return data
+}
+
 
 async function main() {
   await getEvent()
   let token = await getToken()
+  await getSection(token)
   const options = await getOptions(token)
   let {choice} = await inquirer.prompt([
     {
